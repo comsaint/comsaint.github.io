@@ -1,1 +1,75 @@
-Hello World
+<!DOCTYPE html>
+<meta charset="utf-8">
+<script src="https://d3js.org/d3.v4.js"></script>
+
+<style type="text/css">
+svg {
+  font-family: "Helvetica Neue", Helvetica;
+}
+
+.line {
+  fill: none;
+  stroke: #000;
+  stroke-width: 2px;
+}
+</style>
+
+
+Hello World!
+<div id="my_dataviz"></div>
+<p>
+Bye World!
+</p>
+
+
+<script>
+
+// create data
+var data = [
+    {x: 0, y: 20}, 
+    {x: 150, y: 150}, 
+    {x: 300, y: 100}, 
+    {x: 450, y: 20}, 
+    {x: 600, y: 130}];
+
+//var totalLength = d.getTotalLength();
+var totalLength = 5;
+
+var margin = {top: 30, right: 30, bottom: 30, left: 60},
+    width = 460 - margin.left - margin.right,
+    height = 400 - margin.top - margin.bottom;
+
+// create svg element:
+var svg = d3.select("#my_dataviz")
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+          
+// Add X axis
+var x = d3.scaleLinear()
+  .domain([0, d3.max(data, function(d) { return +d.x; })])
+  .range([ 0, width]);
+svg.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x));
+      
+// Add Y axis
+var y = d3.scaleLinear()
+  .domain([0, d3.max(data, function(d) { return +d.y; })])
+  .range([ height, 0 ]);
+svg.append("g").call(d3.axisLeft(y));
+
+    
+// Add the line
+svg.append("path")
+      .datum(data)
+      .attr("fill", "none")
+      .attr("stroke", "steelblue")
+      .attr("stroke-width", "2")
+      .attr("d", d3.line()
+        .x(function(d) { return x(d.x) })
+        .y(function(d) { return y(d.y) }));
+  
