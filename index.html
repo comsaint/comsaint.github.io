@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<script src="https://d3js.org/d3.v4.js"></script>
+<script src="https://d3js.org/d3.v7.js"></script>
 
 <style type="text/css">
 svg {
@@ -23,7 +23,7 @@ Bye World!
 
 
 <script>
-
+/*
 // create data
 var data = [
     {x: 0, y: 20}, 
@@ -72,5 +72,82 @@ svg.append("path")
       .attr("d", d3.line()
         .x(function(d) { return x(d.x) })
         .y(function(d) { return y(d.y) }));
+*/
 
+// v2
+width = 460
+height = 400
+margin = ({top: 20, right: 30, bottom: 30, left: 40})
+const svg = d3.select("#my_dataviz").attr("viewBox", [0, 0, width, height]);
+/*
+data = Object.assign((await FileAttachment("driving.csv").csv()).map(({side, year, miles, gas}) => ({orient: side, name: year, x: +miles, y: +gas})), {x: "Miles per person per year", y: "Cost per gallon"})
+*/
+
+var data = [
+    {x: 0, y: 0}, 
+    {x: 150, y: 150}, 
+    {x: 300, y: 100}, 
+    {x: 450, y: 20}, 
+    {x: 600, y: 130}];
+
+x = d3.scaleLinear()
+    .domain(d3.extent(data, d => d.x)).nice()
+    .range([margin.left, width - margin.right])
+    
+y = d3.scaleLinear()
+    .domain(d3.extent(data, d => d.y)).nice()
+    .range([height - margin.bottom, margin.top])
+
+xAxis = g => g
+    .attr("transform", `translate(0,${height - margin.bottom})`)
+    .call(d3.axisBottom(x).ticks(width / 80));
+
+yAxis = g => g
+    .attr("transform", `translate(${margin.left},0)`)
+    .call(d3.axisLeft(y).ticks(null, "$.2f"));
+
+line = d3.line()
+    .curve(d3.curveCatmullRom)
+    .x(d => x(d.x))
+    .y(d => y(d.y))
+
+const l = length(line(data));
+
+  svg.append("g")
+      .call(xAxis);
+  
+  svg.append("g")
+      .call(yAxis);
+  
+  svg.append("path")
+      .datum(data)
+      .attr("fill", "none")
+      .attr("stroke", "black")
+      .attr("stroke-width", 2.5)
+      .attr("stroke-linejoin", "round")
+      .attr("stroke-linecap", "round")
+      .attr("stroke-dasharray", `0,${l}`)
+      .attr("d", line)
+    .transition()
+      .duration(3000)
+      .ease(d3.easeLinear)
+      .attr("stroke-dasharray", `${l},${l}`);
+  
+  svg.append("g")
+      .attr("fill", "white")
+      .attr("stroke", "black")
+      .attr("stroke-width", 2)
+    .selectAll("circle")
+    .data(data)
+    .join("circle")
+      .attr("cx", d => x(d.x))
+      .attr("cy", d => y(d.y))
+      .attr("r", 3);
+
+function length(path) {
+  return d3.create("svg:path").attr("d", path).node().getTotalLength();
+}
+
+d3 = require("d3@6")
+  
 </script>
