@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<script src="https://d3js.org/d3.v7.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
 
 <style type="text/css">
 svg {
@@ -23,58 +23,6 @@ Bye World!
 
 
 <script>
-/*
-// create data
-var data = [
-    {x: 0, y: 20}, 
-    {x: 150, y: 150}, 
-    {x: 300, y: 100}, 
-    {x: 450, y: 20}, 
-    {x: 600, y: 130}];
-
-//var totalLength = d.getTotalLength();
-var totalLength = 5;
-
-var margin = {top: 30, right: 30, bottom: 30, left: 60},
-    width = 460 - margin.left - margin.right,
-    height = 400 - margin.top - margin.bottom;
-
-// create svg element:
-var svg = d3.select("#my_dataviz")
-  .append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("transform",
-          "translate(" + margin.left + "," + margin.top + ")");
-          
-// Add X axis
-var x = d3.scaleLinear()
-  .domain([0, d3.max(data, function(d) { return +d.x; })])
-  .range([ 0, width]);
-svg.append("g")
-      .attr("transform", "translate(0," + height + ")")
-      .call(d3.axisBottom(x));
-      
-// Add Y axis
-var y = d3.scaleLinear()
-  .domain([0, d3.max(data, function(d) { return +d.y; })])
-  .range([ height, 0 ]);
-svg.append("g").call(d3.axisLeft(y));
-
-    
-// Add the line
-svg.append("path")
-      .datum(data)
-      .attr("fill", "none")
-      .attr("stroke", "steelblue")
-      .attr("stroke-width", "2")
-      .attr("d", d3.line()
-        .x(function(d) { return x(d.x) })
-        .y(function(d) { return y(d.y) }));
-*/
-
-// v2
 width = 460
 height = 400
 margin = ({top: 20, right: 30, bottom: 30, left: 40})
@@ -83,15 +31,24 @@ const svg = d3.select("#my_dataviz").attr("viewBox", [0, 0, width, height]);
 data = Object.assign((await FileAttachment("driving.csv").csv()).map(({side, year, miles, gas}) => ({orient: side, name: year, x: +miles, y: +gas})), {x: "Miles per person per year", y: "Cost per gallon"})
 */
 
+const dur = 3000;  // control plot speed
+
 var data = [
     {x: 0, y: 0}, 
-    {x: 150, y: 150}, 
-    {x: 300, y: 100}, 
-    {x: 450, y: 20}, 
-    {x: 600, y: 130}];
+    {x: 50, y: 150}, 
+    {x: 100, y: 100}, 
+    {x: 150, y: 20}, 
+    {x: 200, y: 130}];
+
+var data2 = [
+    {x: 250, y: 0}, 
+    {x: 300, y: 150}, 
+    {x: 350, y: 100}, 
+    {x: 400, y: 20}, 
+    {x: 450, y: 130}];
 
 x = d3.scaleLinear()
-    .domain(d3.extent(data, d => d.x)).nice()
+    .domain([0, 300]).nice()
     .range([margin.left, width - margin.right])
     
 y = d3.scaleLinear()
@@ -119,33 +76,47 @@ const l = length(line(data));
   svg.append("g")
       .call(yAxis);
   
-  svg.append("path")
+  var path = svg.append("path")
       .datum(data)
       .attr("fill", "none")
       .attr("stroke", "black")
       .attr("stroke-width", 2.5)
       .attr("stroke-linejoin", "round")
       .attr("stroke-linecap", "round")
-      .attr("stroke-dasharray", `0,${l}`)
-      .attr("d", line)
+      .attr("stroke-dasharray", `0,${l}`);
+      
+    path.attr("d", line)
     .transition()
-      .duration(3000)
+      .duration(dur)
       .ease(d3.easeLinear)
       .attr("stroke-dasharray", `${l},${l}`);
-  
-  svg.append("g")
-      .attr("fill", "white")
-      .attr("stroke", "black")
-      .attr("stroke-width", 2)
-    .selectAll("circle")
-    .data(data)
-    .join("circle")
-      .attr("cx", d => x(d.x))
-      .attr("cy", d => y(d.y))
-      .attr("r", 3);
 
-function length(path) {
-  return d3.create("svg:path").attr("d", path).node().getTotalLength();
-}
-  
+    // draw dot in front of line
+    svg.append("circle")
+		.attr("cx", margin.left) //Starting x
+		.attr("cy", height - margin.bottom) //Starting y
+		.attr("r", 6)
+		.attr('fill', 'red')
+		.transition()
+		.duration(dur)
+		.ease(d3.easeLinear)
+		.tween("pathTween", function(){return pathTween(path)})
+		//.tween("pathTween", pathTween); //Custom tween to set the cx and cy attributes
+    
+    // draw along path
+    function pathTween(path){
+    	var length = path.node().getTotalLength(); // Get the length of the path
+    	var r = d3.interpolate(0, length); //Set up interpolation from 0 to the path length
+    	return function(t){
+    		var point = path.node().getPointAtLength(r(t)); // Get the next point along the path
+    		d3.select(this) // Select the circle
+    			.attr("cx", point.x) // Set the cx
+    			.attr("cy", point.y) // Set the cy
+    	}
+    }
+     
+    function length(path) {
+      return d3.create("svg:path").attr("d", path).node().getTotalLength();
+    }
+
 </script>
