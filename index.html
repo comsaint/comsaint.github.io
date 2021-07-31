@@ -14,109 +14,142 @@ svg {
 }
 </style>
 
+<body onload='init()'>
 
-Hello World!
-<svg id="my_dataviz" width="460" height="400"></svg>
+<svg id="my_dataviz" width="760" height="500"></svg>
+
 <p>
-Bye World!
+<input type="button" value="mybutton1" onclick="plot_data()">
+<p>
+
+<p id="narr">
+Narratives
 </p>
 
-
 <script>
-width = 460
+var data;
+width = 560
 height = 400
-margin = ({top: 20, right: 30, bottom: 30, left: 40})
-const svg = d3.select("#my_dataviz").attr("viewBox", [0, 0, width, height]);
-/*
-data = Object.assign((await FileAttachment("driving.csv").csv()).map(({side, year, miles, gas}) => ({orient: side, name: year, x: +miles, y: +gas})), {x: "Miles per person per year", y: "Cost per gallon"})
-*/
+margin = ({top: 30, right: 30, bottom: 30, left: 40})
+const dur = 5000;  // control plot speed
+const l = 2019-1947+1;
 
-const dur = 3000;  // control plot speed
+svg = d3.select("#my_dataviz").attr("viewBox", [0, 0, width, height]);
 
-var data = [
-    {x: 0, y: 0}, 
-    {x: 50, y: 150}, 
-    {x: 100, y: 100}, 
-    {x: 150, y: 20}, 
-    {x: 200, y: 130}];
+state = 0;
 
-var data2 = [
-    {x: 250, y: 0}, 
-    {x: 300, y: 150}, 
-    {x: 350, y: 100}, 
-    {x: 400, y: 20}, 
-    {x: 450, y: 130}];
-
-x = d3.scaleLinear()
-    .domain([0, 300]).nice()
+// draw initial axes
+xscale = d3.scaleLinear()
+    .domain([1947, 2020]).nice()
     .range([margin.left, width - margin.right])
-    
-y = d3.scaleLinear()
-    .domain(d3.extent(data, d => d.y)).nice()
-    .range([height - margin.bottom, margin.top])
+yscale = d3.scaleLinear()
+        .domain([0, 40000]).nice()
+        .range([height - margin.bottom, margin.top])
 
 xAxis = g => g
-    .attr("transform", `translate(0,${height - margin.bottom})`)
-    .call(d3.axisBottom(x).ticks(width / 80));
+      .attr("transform", `translate(0,${height - margin.bottom})`)
+      .call(d3.axisBottom(xscale).tickFormat(d3.format('d'))
+      .ticks(null, width / 80));
 
 yAxis = g => g
-    .attr("transform", `translate(${margin.left},0)`)
-    .call(d3.axisLeft(y).ticks(null, "$.2f"));
+      .attr("transform", `translate(${margin.left},0)`)
+      .call(d3.axisLeft(yscale).ticks(null, "$d"));
 
-line = d3.line()
-    .curve(d3.curveCatmullRom)
-    .x(d => x(d.x))
-    .y(d => y(d.y))
+xs = svg.append('g');
+xs.call(xAxis);
+ys = svg.append('g');
+ys.call(yAxis);
 
-const l = length(line(data));
+path = svg.append("path");
 
-  svg.append("g")
-      .call(xAxis);
+
+async function init(){
+  // load data
+    window.data = await d3.csv("Wages_parsed.csv", function(row) {
+    return {x: row.Year, 
+            y90: row.Bottom90, 
+            y10:row.Upper10, 
+            y01:row.Upper01}
+  });
+}
+
+function plot_yaxis(){ 
+  if (window.state == 0){
+    ymax = 40000;
+  }
+  else if (window.state == 1){
+    ymax = 300000;
+  }
+  else if (window.state == 2){
+    ymax = 3000000;
+  }
+
+  yscale = d3.scaleLinear()
+        .domain([0, ymax]).nice()
+        .range([height - margin.bottom, margin.top])
+
+  yAxis = g => g
+      .attr("transform", `translate(${margin.left},0)`)
+      .call(d3.axisLeft(yscale).ticks(null, "$d"));
+
+  window.ys.transition().duration(2000).call(yAxis);
+
+  return yscale;
+}
+
+
+function plot_data(){
+  window.yscale = plot_yaxis();
+
+  if (window.state == 0){
+    line = d3.line()
+        .curve(d3.curveCatmullRom)
+        .x(d => window.xscale(d.x))
+        .y(d => window.yscale(d.y90));
+  }
+  else if (window.state == 1){
+    line = d3.line()
+        .curve(d3.curveCatmullRom)
+        .x(d => window.xscale(d.x))
+        .y(d => window.yscale(d.y10));
+  }
+  else {
+    line = d3.line()
+        .curve(d3.curveCatmullRom)
+        .x(d => window.xscale(d.x))
+        .y(d => window.yscale(d.y01));
+  }
   
-  svg.append("g")
-      .call(yAxis);
-  
-  var path = svg.append("path")
-      .datum(data)
+  window.path.datum(data)
       .attr("fill", "none")
       .attr("stroke", "black")
       .attr("stroke-width", 2.5)
       .attr("stroke-linejoin", "round")
       .attr("stroke-linecap", "round")
-      .attr("stroke-dasharray", `0,${l}`);
-      
-    path.attr("d", line)
-    .transition()
-      .duration(dur)
-      .ease(d3.easeLinear)
-      .attr("stroke-dasharray", `${l},${l}`);
+      .attr("d", '')
+      .attr("stroke-dasharray", `0,${l}`)
+      .attr("d", line)
+      .transition()
+        .duration(window.dur)
+        .ease(d3.easeLinear)
+        .attr("stroke-dasharray", `${window.l},${window.l}`);
 
-    // draw dot in front of line
-    svg.append("circle")
-		.attr("cx", margin.left) //Starting x
-		.attr("cy", height - margin.bottom) //Starting y
-		.attr("r", 6)
-		.attr('fill', 'red')
-		.transition()
-		.duration(dur)
-		.ease(d3.easeLinear)
-		.tween("pathTween", function(){return pathTween(path)})
-		//.tween("pathTween", pathTween); //Custom tween to set the cx and cy attributes
-    
-    // draw along path
-    function pathTween(path){
-    	var length = path.node().getTotalLength(); // Get the length of the path
-    	var r = d3.interpolate(0, length); //Set up interpolation from 0 to the path length
-    	return function(t){
-    		var point = path.node().getPointAtLength(r(t)); // Get the next point along the path
-    		d3.select(this) // Select the circle
-    			.attr("cx", point.x) // Set the cx
-    			.attr("cy", point.y) // Set the cy
-    	}
-    }
-     
-    function length(path) {
-      return d3.create("svg:path").attr("d", path).node().getTotalLength();
-    }
+  window.state +=1;
+}
 
+// draw along path
+function pathTween(path){
+  var length = path.node().getTotalLength(); // Get the length of the path
+  var r = d3.interpolate(0, length); //Set up interpolation from 0 to the path length
+  return function(t){
+    var point = path.node().getPointAtLength(r(t)); // Get the next point along the path
+    d3.select(this) // Select the circle
+      .attr("cx", point.x) // Set the cx
+      .attr("cy", point.y) // Set the cy
+  }
+}
+
+function length(path) {
+  return d3.create("svg:path").attr("d", path).node().getTotalLength();
+}
 </script>
