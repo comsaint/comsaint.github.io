@@ -1,37 +1,113 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <script src="https://d3js.org/d3.v7.min.js"></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-annotation/2.5.1/d3-annotation.min.js" 
+integrity="sha512-iBAeBWWWFb8HqSBcrqcz98iIpuVH1la39dEYHtyQ/pGpeCQTQVvLJOWAuhv2Q7JSHp9k7hWA7sGxU3hHJe+tFg==" 
+crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style type="text/css">
-svg {
-  font-family: "Helvetica Neue", Helvetica;
-}
+  svg {
+    font-family: "Helvetica Neue", Helvetica;
+  }
 
-.line {
-  fill: none;
-  stroke: #000;
-  stroke-width: 2px;
-}
+  body{
+        background-color: whitesmoke;
+     }
+
+  .line {
+    fill: none;
+    stroke: #000;
+    stroke-width: 2px;
+  }
+
+  :root {
+      --line-chart-color: #607D8B;
+      --annotation-context-color: #00796B;
+      --annotation-above-color: #00BFA5;
+      --annotation-anomaly-color: #E8336D;
+    }
+
+      .annotation path {
+      stroke: var(--annotation-context-color);
+    }
+
+    .annotation:not(.above):not(.anomaly) path {
+      stroke-dasharray: 1,3;
+    }
+
+    .annotation text {
+      fill: var(--annotation-context-color);
+      font-size: 8px;
+    }
+
+    .annotation.above path {
+      stroke: var(--annotation-above-color);
+      font-size: 8px;
+    }
+
+    .annotation.above text {
+      fill: var(--annotation-above-color);
+      font-size: 8px;
+    }
+
+    .annotation.anomaly path {
+      stroke: var(--annotation-anomaly-color);
+      stroke-width: 2px;
+      font-size: 8px;
+    }
+
+    .annotation.anomaly text {
+      fill: var(--annotation-anomaly-color);
+      font-size: 12px;
+    }
+
+    .annotation-note-bg {
+      fill: rgba(0, 0, 0, 0);
+    }
+
+    .annotation-note-title {
+      font-weight: bold;
+      font-size: 8px;
+    }
+
+    text.title {
+      font-size: 8px;
+      font-weight: bold;
+    }
+
+  .pnar {
+    width: 840px;
+    height: 110px;
+    border: 1px solid black;
+    font-size:14px;
+    background-color:white
+  }
+
 </style>
 
+<head>
+  <title>Average Wages in US</title>
+</head>
+
 <body onload='init()'>
-
-<svg id="my_dataviz" width="760" height="500"></svg>
-
+<h1>Average Annual Wages in U.S.</h1>
+<h4>The gap between high and low wage earners</h4>
+<div>
+How much do you earn? This is the question for all those who work to make a living. <br><br>
+In here, we will look at how the average annual wage changed from 1947 to 2019 in the U.S., for an average worker compared to the elites. <br><br><br>
+<i  style="font-size:14px">Click the button below to navigate.</i>
+</div>
 <p>
-<input type="button" value="mybutton1" onclick="plot_data()">
-<p>
+<input id="btn" type="button" value="Next" onclick="plot_data()">
+<br>
+<p id="narr" class="pnar"></p>
+<svg id="my_dataviz" width="860" height="500"></svg>
 
-<p id="narr">
-Narratives
-</p>
 
 <script>
 var data;
 width = 560
 height = 400
-margin = ({top: 30, right: 30, bottom: 30, left: 40})
-const dur = 5000;  // control plot speed
+margin = ({top: 50, right: 30, bottom: 30, left: 50})
 const l = 2019-1947+1;
 
 svg = d3.select("#my_dataviz").attr("viewBox", [0, 0, width, height]);
@@ -60,7 +136,66 @@ xs.call(xAxis);
 ys = svg.append('g');
 ys.call(yAxis);
 
-path = svg.append("path");
+// x-axis label
+svg.append("text")
+    .attr('font-size', 14)
+    .attr("class", "x label")
+    .attr("text-anchor", "end")
+    .attr("x", width/2)
+    .attr("y", height)
+    .text("Year");
+
+// y-axis label
+svg.append("text")
+    .attr('font-size', 12)
+    .attr("class", "y label")
+    .attr("text-anchor", "end")
+    .attr("x", margin.left+60)
+    .attr("y", margin.top-25)
+    .text("Average Annual Wages (USD)");
+
+// paths
+path1 = svg.append("path").attr('id', 'path1')
+      .attr("fill", "none")
+      .attr("stroke", "black")
+      .attr("stroke-width", 1.5)
+      .attr("stroke-linejoin", "round")
+      .attr("stroke-linecap", "round")
+      .attr("stroke-dasharray", `0,${l}`);
+path2 = svg.append("path")
+      .attr("fill", "none")
+      .attr("stroke", "green")
+      .attr("stroke-width", 2.0)
+      .attr("stroke-linejoin", "round")
+      .attr("stroke-linecap", "round")
+      .attr("stroke-dasharray", `0,${l}`);
+path3 = svg.append("path")
+      .attr("fill", "none")
+      .attr("stroke", "red")
+      .attr("stroke-width", 2.5)
+      .attr("stroke-linejoin", "round")
+      .attr("stroke-linecap", "round")
+      .attr("stroke-dasharray", `0,${l}`);
+
+// line labels
+lb1 = svg.append("text")
+    .attr('font-size', 12)
+		.attr("dy", ".35em")
+		.attr("text-anchor", "start")
+		.style("fill", "black")
+    .attr("transform", "translate(" + xscale(2019) + "," + 0 + ")");
+lb2 = svg.append("text")
+    .attr('font-size', 12)
+		.attr("dy", ".35em")
+		.attr("text-anchor", "start")
+		.style("fill", "green")
+    .attr("transform", "translate(" + xscale(2019) + "," + 0 + ")");
+lb3 = svg.append("text")
+    .attr('font-size', 12)
+		.attr("dy", ".35em")
+		.attr("text-anchor", "start")
+		.style("fill", "red")
+    .attr("transform", "translate(" + xscale(2019) + "," + 0 + ")");
 
 
 async function init(){
@@ -68,8 +203,10 @@ async function init(){
     window.data = await d3.csv("Wages_parsed.csv", function(row) {
     return {x: row.Year, 
             y90: row.Bottom90, 
-            y10:row.Upper10, 
-            y01:row.Upper01}
+            y10: row.Upper10, 
+            y01: row.Upper01,
+            r1: row.Ratio1,
+            r2: row.Ratio2}
   });
 }
 
@@ -92,49 +229,229 @@ function plot_yaxis(){
       .attr("transform", `translate(${margin.left},0)`)
       .call(d3.axisLeft(yscale).ticks(null, "$d"));
 
-  window.ys.transition().duration(2000).call(yAxis);
-
+  window.ys.transition().duration(3000).call(yAxis);
+  
   return yscale;
 }
 
 
 function plot_data(){
+  const line_speed = 3000;
+  var label_speed;
+  if (window.state <=2){ 
   window.yscale = plot_yaxis();
-
-  if (window.state == 0){
-    line = d3.line()
+  
+  line1 = d3.line()
         .curve(d3.curveCatmullRom)
         .x(d => window.xscale(d.x))
         .y(d => window.yscale(d.y90));
-  }
-  else if (window.state == 1){
-    line = d3.line()
+  line2 = d3.line()
         .curve(d3.curveCatmullRom)
         .x(d => window.xscale(d.x))
         .y(d => window.yscale(d.y10));
-  }
-  else {
-    line = d3.line()
+  line3 = d3.line()
         .curve(d3.curveCatmullRom)
         .x(d => window.xscale(d.x))
         .y(d => window.yscale(d.y01));
-  }
-  
-  window.path.datum(data)
-      .attr("fill", "none")
-      .attr("stroke", "black")
-      .attr("stroke-width", 2.5)
-      .attr("stroke-linejoin", "round")
-      .attr("stroke-linecap", "round")
-      .attr("d", '')
-      .attr("stroke-dasharray", `0,${l}`)
-      .attr("d", line)
-      .transition()
-        .duration(window.dur)
-        .ease(d3.easeLinear)
-        .attr("stroke-dasharray", `${window.l},${window.l}`);
 
+  // draw paths and labels
+  if (window.state == 0){label_speed = 0;}
+  else {label_speed = 3000;}
+
+  window.path1
+    .datum(data)
+    .transition()
+      .duration(line_speed)
+      .ease(d3.easeLinear)
+      .attr("stroke-dasharray", `${window.l},${window.l}`)
+      .attr("d", line1);
+  window.lb1
+    .text("Bottom 90%")
+    .transition()
+      .duration(label_speed)
+      .attr("transform", "translate(" + width + "," + yscale(window.data[window.data.length-1].y90) + ")");
+
+  window.path2
+    .datum(data)
+    .transition()
+      .duration(line_speed)
+      .ease(d3.easeLinear)
+      .attr("stroke-dasharray", `${window.l},${window.l}`)
+      .attr("d", line2);
+  window.lb2
+    .text("Top 10%")
+    .transition()
+      .duration(label_speed)
+      .attr("transform", "translate(" + width + "," + yscale(window.data[window.data.length-1].y10) + ")");
+
+  window.path3
+    .datum(data)
+    .transition()
+      .duration(line_speed)
+      .ease(d3.easeLinear)
+      .attr("stroke-dasharray", `${window.l},${window.l}`)
+      .attr("d", line3);
+  window.lb3
+    .text("Top 0.1%")
+    .transition()
+      .duration(label_speed)
+      .attr("transform", "translate(" + width + "," + yscale(window.data[window.data.length-1].y01) + ")");
+  }
+  change_narrative();
+  if (window.state == 3){
+    make_annotation();
+  }
+  else if (window.state == 4){
+    draw_hoverpoint();
+  }
   window.state +=1;
+}
+
+function make_annotation() {
+  var annotations;
+  annotations = [
+          {
+            note: { label: "1980s bull market begins" },
+            subject: {
+              y1: margin.top,
+              y2: height - margin.bottom
+            },
+            y: margin.top,
+            data: { x: 1980}
+          },
+          {
+            note: { label: "Dot-com bubble blast, 2000"},
+            subject: {
+              y1: margin.top,
+              y2: height - margin.bottom
+            },
+            y: margin.top,
+            data: { x: 2000}
+          },
+          {
+            note: { label: "Financial crisis, 2007-08"},
+            subject: {
+              y1: margin.top,
+              y2: height - margin.bottom
+            },
+            y: margin.top,
+            data: { x: 2007}
+          },
+        ]
+
+  const type = d3.annotationCustomType(
+    d3.annotationXYThreshold, 
+    {"note":{
+        "lineType":"none",
+        "orientation": "top",
+        "align":"middle"}
+    }
+  )
+
+  const makeAnnotations = d3.annotation()
+    .type(type)
+    //Gives you access to any data objects in the annotations array
+    .accessors({ 
+      x: function(d){ return xscale(d.x)},
+      y: function(d){ return yscale(d.y)}
+    })
+    .annotations(annotations)
+    .textWrap(30)
+
+  d3.select("svg")
+    .append("g")
+    .attr("class", "annotation-group")
+    .call(makeAnnotations)
+  }
+
+
+function change_narrative(){
+  var narr = document.getElementById('narr');
+  console.log(window.state);
+  switch (window.state) {
+  case 0:
+    narr.innerHTML = 'The line below (black) shows the average annual wages of the bottom 90% of U.S. workers.<br><br>At 2019, the average annual wage of 9 out of 10 U.S. workers was <b>$38,923</b>, which is <b>2.4</b> times of what they made back in 1947 ($16,393). Notice that the growth is quite steady over the years.<br><br>';
+    break;
+  case 1:
+    narr.innerHTML = 'If we compare to the top 10% of the workers, we can see that their wages grew much faster.<br><br>Back in 1947, the top 10% was earning $77,500 annually, or <b>4.7</b> times of the bottom 90% average.<br><br>They earned <b>$290K</b> in 2019, <b>7.5</b> times of their 90% peers.<br><br>';
+    break;
+  case 2:
+    narr.innerHTML = 'If you make it into the top 0.1% - the one-in-a-thousand elite - you are in luck!<br><br>Not only do you enjoy a much higher wage (near <b>$3M</b>, or <b>72</b> times of bottom 90% in 2019), but also a growth which skyrocketed since the 1980\'s (with a little of turbulence though).<br><br>The gap between you and the others has widen for many years.<br><br>';
+    break;
+  case 3:
+    narr.innerHTML = 'The wages of the Top 0.1% is heavily tied to stock market, as shown in the chart. <br><br>The average wage rose rapidly widen during the bull market in 1980s, and fall after the market crashed in 2000 and 2007. Yet, it quickly recovers as the situation improves.<br><br>';
+    break;
+  case 4:
+    narr.innerHTML = 'Feel free to move the cursor to explore how much the top 0.1% wage earners made, and compare to the other groups.<br><br>Notice that the ratio between top 0.1% and bottom 90% was constantly ~10-20x before 1980, starting from which the gap widen and reach its peak in right before the financial crisis in 2007 (83x).<br><br>';
+    break;
+  default:
+    narr.innerHTML = "End of story. Thank you!<br><br>"
+    document.getElementById("btn").value = "End";
+    document.getElementById("btn").disabled = true; // disable the button
+  }
+}
+
+function draw_hoverpoint(){
+  // This allows to find the closest X index of the mouse:
+  var bisect = d3.bisector(function(d) { return d.x; }).left;
+
+  // Create the circle that travels along the curve of chart
+  var focus = svg
+    .append('g')
+    .append('circle')
+      .style("fill", "none")
+      .attr("stroke", "black")
+      .attr('r', 2.5)
+      .style("opacity", 0)
+
+  // Create the text that travels along the curve of chart
+  var focusText = svg
+    .append('g')
+    .append('text')
+      .style("opacity", 0)
+      .attr("text-anchor", "left")
+      .attr("alignment-baseline", "middle")
+      .style("font-size", '11px')
+      .style("font-weight", 'bold');
+  
+  // Create a rect on top of the svg area: this rectangle recovers mouse position
+  svg
+    .append('rect')
+    .style("fill", "none")
+    .style("pointer-events", "all")
+    .attr('width', width)
+    .attr('height', height)
+    .on("mouseover", mouseover)
+    .on('mousemove', mousemove)
+    .on('mouseout', mouseout);
+
+  // What happens when the mouse move -> show the annotations at the right positions.
+  function mouseover(e) {
+    focus.style("opacity", 1)
+    focusText.style("opacity",1)
+  }
+
+  function mousemove(e) {
+    // recover coordinate we need
+    var x0 = xscale.invert(d3.pointer(e)[0]);
+    var i = bisect(data, x0, 1);
+    selectedData = data[i]
+    focus
+      .attr("cx", xscale(selectedData.x))
+      .attr("cy", yscale(selectedData.y01))
+    
+    if (x0 <= 1980){posx = xscale(selectedData.x)}
+    else {posx = xscale(selectedData.x)-300}
+
+    focusText
+      .html("Year " + selectedData.x + ", top 0.1% earn $" + selectedData.y01 + ", " + selectedData.r2 + " times of the bottom 90%.")
+      .attr("x", posx)
+      .attr("y", yscale(selectedData.y01) + 20)
+    }
+  function mouseout(e) {
+    focus.style("opacity", 0)
+    focusText.style("opacity", 0)
+  }
 }
 
 // draw along path
